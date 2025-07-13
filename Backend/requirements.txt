@@ -1,0 +1,36 @@
+# Core API
+fastapi
+uvicorn
+python-multipart
+streamlit
+
+# Database
+motor  # async MongoDB client for MongoDB
+
+# Encryption + Auth
+cryptography
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+
+# Image Upload
+cloudinary
+pillow
+
+# Machine Learning / NLP
+tensorflow-cpu
+scikit-learn
+transformers
+sentence-transformers
+spacy
+nltk
+empath
+
+# CV (optional but included for now)
+opencv-python-headless
+
+# Data + Utils
+numpy
+pandas
+requests
+pyyaml

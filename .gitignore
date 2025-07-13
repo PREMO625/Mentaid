@@ -4,3 +4,33 @@
 /DUMP
 /MODELS MADE
 /Notebooks
+/prd.md
+/.blackboxrules
+
+# 💻 Virtual environment
+venv/
+.venv/
+
+# 🔐 Environment variables
+.env
+
+
+
+# 🧪 Python cache
+__pycache__/
+*.py[cod]
+*.so
+
+# 📝 Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+
+# ⚙️ OS-specific
+.DS_Store
+Thumbs.db
+
+# ⚙️ IDE/editor stuff
+.vscode/
+.idea/
+*.swp
+*.bak
+

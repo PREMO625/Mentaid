@@ -200,6 +200,8 @@ def clinician_dashboard():
             st.subheader("LIWC Psychological Analysis")
             liwc_stats = analyze_text(text)
             if liwc_stats:
+                # Basic text metrics
+                st.subheader("Text Metrics")
                 c1, c2 = st.columns(2)
                 with c1:
                     st.metric("Total Words", liwc_stats['total_words'])
@@ -208,19 +210,52 @@ def clinician_dashboard():
                     st.metric("Total Sentences", liwc_stats['total_sentences'])
                     st.metric("Most Prominent Emotion", liwc_stats['most_prominent_emotion'] or 'N/A')
 
-                # Emotion bar chart
+                # Emotion Analysis
+                st.subheader("Emotion Distribution")
                 emotion_cats = [cat for cat in liwc_stats['category_scores'] if "emotion" in cat]
                 if emotion_cats:
                     emotion_scores = {cat: liwc_stats['category_scores'][cat] for cat in emotion_cats}
                     emo_df = pd.DataFrame(list(emotion_scores.items()), columns=['Emotion', 'Score'])
-                    st.plotly_chart(px.bar(emo_df, x='Emotion', y='Score', title='Emotion Distribution'))
+                    fig = px.bar(emo_df, x='Emotion', y='Score', title='Emotion Distribution')
+                    fig.update_layout(
+                        xaxis_title='Emotion Category',
+                        yaxis_title='Score',
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig)
 
-                # Other categories radar
+                # Psychological Categories
+                st.subheader("Psychological Profile")
                 other_cats = [cat for cat in liwc_stats['category_scores'] if cat not in emotion_cats]
                 if other_cats:
                     other_scores = {cat: liwc_stats['category_scores'][cat] for cat in other_cats}
                     other_df = pd.DataFrame(list(other_scores.items()), columns=['Category', 'Score'])
-                    st.plotly_chart(px.line_polar(other_df, r='Score', theta='Category', line_close=True, title='Psychological Profile'))
+                    
+                    # Create radar chart
+                    fig = px.line_polar(
+                        other_df,
+                        r='Score',
+                        theta='Category',
+                        line_close=True,
+                        title='Psychological Profile'
+                    )
+                    fig.update_layout(
+                        polar=dict(
+                            radialaxis=dict(
+                                visible=True,
+                                range=[0, 1]
+                            )
+                        ),
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig)
+
+                # Detailed Category Scores
+                st.subheader("Detailed Category Scores")
+                all_scores = liwc_stats['category_scores']
+                scores_df = pd.DataFrame(list(all_scores.items()), columns=['Category', 'Score'])
+                scores_df = scores_df.sort_values('Score', ascending=False)
+                st.dataframe(scores_df, height=400)
 
         # ---- Lexical Complexity ----
         elif analysis_type == "Lexical Complexity":
@@ -301,13 +336,6 @@ def clinician_dashboard():
                 st.metric("Type-Token Ratio", f"{semantic_analysis['type_token_ratio']:.2f}")
                 st.metric("Lexical Density", f"{semantic_analysis['lexical_density']:.2f}")
                 st.metric("Average Sentence Length", f"{semantic_analysis['avg_sentence_length']:.2f}")
-                
-                # Show LIWC metrics
-                st.subheader("LIWC Analysis")
-                liwc_metrics = {k: v for k, v in semantic_analysis.items() if k.startswith('liwc_')}
-                if liwc_metrics:
-                    liwc_df = pd.DataFrame(list(liwc_metrics.items()), columns=['Category', 'Score'])
-                    st.dataframe(liwc_df)
 
         # ---- Final Assessment ----
         elif analysis_type == "Final Assessment":
@@ -324,66 +352,54 @@ def clinician_dashboard():
                 st.metric("Ensemble Prediction", f"{ensemble_prediction:.2f}")
             with col3:
                 st.metric("Type-Token Ratio", f"{semantic_analysis['type_token_ratio']:.2f}")
-        # (Removed duplicate Pronoun & Tense Usage expander)
-        # Duplicate pronoun & tense usage block removed
-            pos_stats = pos_analyzer.get_stats(latest_entry["text"])
-            if pos_stats:
-                pr_df = pd.DataFrame(list(pos_stats['pronouns'].items()), columns=['Pronoun', 'Proportion'])
-                te_df = pd.DataFrame(list(pos_stats['tenses'].items()), columns=['Tense', 'Proportion'])
-                st.plotly_chart(px.bar(pr_df, x='Pronoun', y='Proportion', title='Pronoun Distribution'))
-                st.plotly_chart(px.bar(te_df, x='Tense', y='Proportion', title='Tense Distribution'))
-        # (Removed duplicate Explainability block now inside toggle)
-        # Duplicate explainability block removed
 
-        # Wrapper that returns probability of class 1 from SVM
-        def svm_proba(text_list):
-            X = svm_model.vectorizer.transform(text_list)
-            if getattr(svm_model.model, "probability", False):
-                return svm_model.model.predict_proba(X)[:, 1]
-            scores = svm_model.model.decision_function(X)
-            return 1 / (1 + np.exp(-scores))
+        # ---- Explainability ----
+        elif analysis_type == "Explainability":
+            st.subheader("Explainability")
+            
+            # SHAP Explanation
+            st.subheader("SHAP Explanation")
+            def svm_proba(text_list):
+                X = svm_model.vectorizer.transform(text_list)
+                if getattr(svm_model.model, "probability", False):
+                    return svm_model.model.predict_proba(X)[:, 1]
+                scores = svm_model.model.decision_function(X)
+                return 1 / (1 + np.exp(-scores))
 
-        # ---------- SHAP ----------
-        if "svm_shap_explainer" not in st.session_state:
-            # Initialize text masker explainer once
-            masker = shap.maskers.Text()
-            st.session_state["svm_shap_explainer"] = shap.Explainer(svm_proba, masker)
-        shap_explainer = st.session_state["svm_shap_explainer"]
-        shap_exp = shap_explainer([latest_entry["text"]], max_evals=2000)
-        shap_vals = shap_exp[0].values
-        tokens = shap_exp[0].data
+            if "svm_shap_explainer" not in st.session_state:
+                masker = shap.maskers.Text()
+                st.session_state["svm_shap_explainer"] = shap.Explainer(svm_proba, masker)
+            shap_explainer = st.session_state["svm_shap_explainer"]
+            shap_exp = shap_explainer([text], max_evals=2000)
+            shap_vals = shap_exp[0].values
+            tokens = shap_exp[0].data
 
-        top_idx = np.argsort(np.abs(shap_vals))[::-1][:20]
-        shap_df = pd.DataFrame({
-            "token": np.array(tokens)[top_idx],
-            "shap": shap_vals[top_idx]
-        })
-        st.markdown("**Top-20 SHAP tokens**")
-        abs_max = np.max(np.abs(shap_vals))
-        styled = shap_df.style.background_gradient(cmap="RdBu", vmin=-abs_max, vmax=abs_max)
-        st.dataframe(styled)
+            top_idx = np.argsort(np.abs(shap_vals))[::-1][:20]
+            shap_df = pd.DataFrame({
+                "token": np.array(tokens)[top_idx],
+                "shap": shap_vals[top_idx]
+            })
+            st.markdown("**Top-20 SHAP tokens**")
+            abs_max = np.max(np.abs(shap_vals))
+            styled = shap_df.style.background_gradient(cmap="RdBu", vmin=-abs_max, vmax=abs_max)
+            st.dataframe(styled)
 
-                # ---------- LIME ----------
-        st.subheader("LIME (SVM)")
-        lime_explainer = LimeTextExplainer(class_names=["Ctrl", "SCZ"])
+            # LIME Explanation
+            st.subheader("LIME Explanation")
+            lime_explainer = LimeTextExplainer(class_names=["Ctrl", "SCZ"])
 
-        def svm_proba_lime(text_list):
-            p1 = svm_proba(text_list)
-            return np.column_stack((1 - p1, p1))  # shape (n_samples, 2)
+            def svm_proba_lime(text_list):
+                p1 = svm_proba(text_list)
+                return np.column_stack((1 - p1, p1))  # shape (n_samples, 2)
 
-        lime_exp = lime_explainer.explain_instance(
-            latest_entry["text"],
-            svm_proba_lime,
-            num_features=15,
-            num_samples=1000,
-            labels=[1],
-        )
-        st.components.v1.html(lime_exp.as_html(), height=350, scrolling=True)
-
-        # ---- Final flag message ----
-        st.markdown("### Final Assessment")
-        flag_text = "**Flagged as SCZ (1)**" if ensemble_label else "**Labelled Ctrl (0)**"
-        st.markdown(flag_text)
+            lime_exp = lime_explainer.explain_instance(
+                text,
+                svm_proba_lime,
+                num_features=15,
+                num_samples=1000,
+                labels=[1],
+            )
+            st.components.v1.html(lime_exp.as_html(), height=350, scrolling=True)
     else:
         st.warning("No journal entries found in local storage!")
 

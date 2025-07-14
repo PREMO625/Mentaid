@@ -50,7 +50,10 @@ def user_interface():
                 "user_id": "user_1"
             }
             # Save to local storage
-            entries = load_from_local_storage("journal_entries")
+            entries = load_from_local_storage("journal_entries") or []
+            # Ensure it's a list (handles old dict storage bug)
+            if not isinstance(entries, list):
+                entries = [entries]
             entries.append(entry)
             save_to_local_storage("journal_entries", entries)
             st.success("Journal entry saved successfully!")
@@ -65,6 +68,7 @@ import shap
 import lime.lime_text
 from lime.lime_text import LimeTextExplainer
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import cloudinary.uploader
 import cloudinary.api
@@ -74,8 +78,7 @@ svm_model = SVMModel()
 nlp_model = NLPModel()
 
 # Initialize explainers
-svm_explainer = shap.Explainer(svm_model.model)
-nlp_explainer = LimeTextExplainer(class_names=['Not Severe', 'Severe'])
+# Explainability tools will be initialized lazily in the dashboard to save memory
 
 def clinician_dashboard():
     st.title("Mentaid - Clinician Dashboard")
@@ -94,11 +97,34 @@ def clinician_dashboard():
         # Get predictions
         svm_predictions = svm_model.predict_chunks(svm_chunks)
         nlp_predictions = nlp_model.predict_chunks(nlp_chunks)
-        
+
+        # Determine class labels (0: Ctrl, 1: SCZ)
+        svm_label = 1 if np.mean(svm_predictions) >= 0.5 else 0
+        nlp_label = 1 if np.mean(nlp_predictions) >= 0.5 else 0
         # Calculate ensemble prediction
         ensemble_prediction = (np.mean(svm_predictions) + np.mean(nlp_predictions)) / 2
+        # Threshold adapted: require both models high or average >0.6
+        ensemble_label = 1 if ensemble_prediction >= 0.6 else 0
+        
+        # Show chunking details
+        st.markdown(f"**SVM chunks:** {len(svm_chunks)} | **NLP chunks:** {len(nlp_chunks)}")
+        
+        # Per-chunk tables
+        svm_df = pd.DataFrame({"chunk": list(range(1, len(svm_chunks)+1)), "svm_prob": svm_predictions})
+        nlp_df = pd.DataFrame({"chunk": list(range(1, len(nlp_chunks)+1)), "nlp_prob": nlp_predictions})
+        cols = st.columns(2)
+        with cols[0]:
+            st.subheader("Per-chunk SVM probs")
+            st.dataframe(svm_df, height=250)
+        with cols[1]:
+            st.subheader("Per-chunk NLP probs")
+            st.dataframe(nlp_df, height=250)
         
         # Display predictions
+        st.subheader("Model Predictions")
+        st.markdown(f"**SVM probability:** {np.mean(svm_predictions):.2f} → **Label:** {'SCZ (1)' if svm_label else 'Ctrl (0)'}")
+        st.markdown(f"**NLP probability:** {np.mean(nlp_predictions):.2f} → **Label:** {'SCZ (1)' if nlp_label else 'Ctrl (0)'}")
+        st.markdown(f"**Ensemble probability:** {ensemble_prediction:.2f} → **Label:** {'SCZ (1)' if ensemble_label else 'Ctrl (0)'}")
         col1, col2, col3 = st.columns(3)
         
         with col1:
@@ -113,28 +139,50 @@ def clinician_dashboard():
             st.metric("Ensemble Prediction", f"{ensemble_prediction:.2f}")
             st.plotly_chart(create_prediction_chart([ensemble_prediction]), use_container_width=True)
             
-        # Display SHAP explanation
-        st.subheader("SHAP Explanation (SVM)")
-        
-        # Preprocess and vectorize the text for SHAP, just like for prediction
-        processed_text = svm_model.preprocess_text(latest_entry["text"])
-        vectorized_text = svm_model.vectorizer.transform([processed_text])
-        
-        # Get SHAP values for the vectorized text
-        shap_values = svm_explainer(vectorized_text)
-        
-        # Use the first explanation for the bar plot
-        shap.plots.bar(shap_values[0])
-        plt.savefig("shap_plot.png")
-        st.image("shap_plot.png")
-        
-        # Display LIME explanation
-        st.subheader("LIME Explanation (NLP)")
-        exp = nlp_explainer.explain_instance(latest_entry["text"], 
-                                            nlp_model.predict, 
-                                            num_features=10)
-        exp.save_to_file("lime.html")
-        st.components.v1.html(open("lime.html").read(), height=800)
+        # ---- Explainability for SVM ----
+        st.subheader("Explainability for SVM")
+
+        # Wrapper that returns probability of class 1 from SVM
+        def svm_proba(text_list):
+            X = svm_model.vectorizer.transform(text_list)
+            if getattr(svm_model.model, "probability", False):
+                return svm_model.model.predict_proba(X)[:, 1]
+            scores = svm_model.model.decision_function(X)
+            return 1 / (1 + np.exp(-scores))
+
+        # ---------- SHAP ----------
+        if "svm_shap_explainer" not in st.session_state:
+            # Initialize text masker explainer once
+            masker = shap.maskers.Text()
+            st.session_state["svm_shap_explainer"] = shap.Explainer(svm_proba, masker)
+        shap_explainer = st.session_state["svm_shap_explainer"]
+        shap_exp = shap_explainer([latest_entry["text"]], max_evals=2000)
+        shap_vals = shap_exp[0].values
+        tokens = shap_exp[0].data
+
+        top_idx = np.argsort(np.abs(shap_vals))[::-1][:20]
+        shap_df = pd.DataFrame({
+            "token": np.array(tokens)[top_idx],
+            "shap": shap_vals[top_idx]
+        })
+        st.markdown("**Top-20 SHAP tokens**")
+        st.dataframe(shap_df.style.background_gradient(cmap="RdBu", center=0))
+
+        # ---------- LIME ----------
+        st.subheader("LIME (SVM)")
+        lime_explainer = LimeTextExplainer(class_names=["Ctrl", "SCZ"])
+        lime_exp = lime_explainer.explain_instance(
+            latest_entry["text"],
+            svm_proba,
+            num_features=15,
+            num_samples=1000
+        )
+        st.components.v1.html(lime_exp.as_html(), height=350, scrolling=True)
+
+        # ---- Final flag message ----
+        st.markdown("### Final Assessment")
+        flag_text = "**Flagged as SCZ (1)**" if ensemble_label else "**Labelled Ctrl (0)**"
+        st.markdown(flag_text)
     else:
         st.warning("No journal entries found in local storage!")
 

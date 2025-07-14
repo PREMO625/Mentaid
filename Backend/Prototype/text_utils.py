@@ -24,7 +24,7 @@ def chunk_text_svm(text, chunk_size=931, overlap=0.5):
     
     return chunks
 
-def chunk_text_nlp(text, max_tokens=512, tokenizer_name='bert-base-uncased'):
+def chunk_text_nlp(text, max_tokens=512, overlap=0.5, tokenizer_name='bert-base-uncased'):
     """
     Chunk text for NLP transformer model using token-based splitting.
     
@@ -40,7 +40,8 @@ def chunk_text_nlp(text, max_tokens=512, tokenizer_name='bert-base-uncased'):
     tokens = tokenizer.encode(text)
     
     chunks = []
-    for i in range(0, len(tokens), max_tokens):
+    step = int(max_tokens * (1 - overlap)) if overlap < 1 else max_tokens
+    for i in range(0, len(tokens), step):
         chunk_tokens = tokens[i:i + max_tokens]
         chunk_text = tokenizer.decode(chunk_tokens)
         chunks.append(chunk_text)

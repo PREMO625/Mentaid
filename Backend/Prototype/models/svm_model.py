@@ -2,6 +2,8 @@ import numpy as np
 from sklearn.svm import SVC
 from sklearn.feature_extraction.text import TfidfVectorizer
 import os
+import sklearn
+import joblib
 from typing import List
 import re
 import nltk
@@ -37,6 +39,11 @@ class SVMModel:
             print(f"scikit-learn version: {sklearn.__version__}")
             print(f"joblib version: {joblib.__version__}")
             
+            # Provide backward-compat alias for pickles created with NumPy>=2
+            import sys
+            import numpy.core as _ncore
+            sys.modules['numpy._core'] = _ncore
+            sys.modules['numpy._core.multiarray'] = _ncore.multiarray
             # Load the model using joblib
             pipeline = joblib.load(model_path)
             self.model = pipeline.named_steps['pipeline'].named_steps['svm']
@@ -83,8 +90,15 @@ class SVMModel:
         # Vectorize text
         vectorized_text = self.vectorizer.transform([processed_text])
         
-        # Predict
-        prediction = self.model.predict_proba(vectorized_text)[0][1]
+                # Predict probability or fallback to decision_function
+                # Use predict_proba if model was trained with probability=True
+        if getattr(self.model, "probability", False):
+            prediction = self.model.predict_proba(vectorized_text)[0][1]
+        else:
+            # Use decision_function score and convert to pseudo-probability via sigmoid
+            import math
+            score = self.model.decision_function(vectorized_text)[0]
+            prediction = 1 / (1 + math.exp(-score))
         return prediction
     
     def predict_chunks(self, chunks: List[str]) -> List[float]:

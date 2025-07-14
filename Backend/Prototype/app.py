@@ -166,6 +166,32 @@ def clinician_dashboard():
         with col3:
             st.metric("Ensemble Prediction", f"{ensemble_prediction:.2f}")
             st.plotly_chart(create_prediction_chart([ensemble_prediction]), use_container_width=True)
+
+        # ---- LIWC Psychological Analysis ----
+        st.subheader("LIWC Psychological Analysis")
+        liwc_stats = analyze_text(latest_entry["text"])
+        if liwc_stats:
+            c1, c2 = st.columns(2)
+            with c1:
+                st.metric("Total Words", liwc_stats['total_words'])
+                st.metric("Average Word Length", f"{liwc_stats['avg_word_length']:.2f}")
+            with c2:
+                st.metric("Total Sentences", liwc_stats['total_sentences'])
+                st.metric("Most Prominent Emotion", liwc_stats['most_prominent_emotion'] or 'N/A')
+
+            # Emotion bar chart
+            emotion_cats = [cat for cat in liwc_stats['category_scores'] if "emotion" in cat]
+            if emotion_cats:
+                emotion_scores = {cat: liwc_stats['category_scores'][cat] for cat in emotion_cats}
+                emo_df = pd.DataFrame(list(emotion_scores.items()), columns=['Emotion', 'Score'])
+                st.plotly_chart(px.bar(emo_df, x='Emotion', y='Score', title='Emotion Distribution'))
+
+            # Other categories radar
+            other_cats = [cat for cat in liwc_stats['category_scores'] if cat not in emotion_cats]
+            if other_cats:
+                other_scores = {cat: liwc_stats['category_scores'][cat] for cat in other_cats}
+                other_df = pd.DataFrame(list(other_scores.items()), columns=['Category', 'Score'])
+                st.plotly_chart(px.line_polar(other_df, r='Score', theta='Category', line_close=True, title='Psychological Profile'))
             
         # ---- Explainability for SVM ----
         st.subheader("Explainability for SVM")

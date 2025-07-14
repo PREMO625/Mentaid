@@ -2,7 +2,7 @@
 fastapi
 uvicorn
 python-multipart
-streamlit
+streamlit==1.46.1
 
 # Database
 motor  # async MongoDB client for MongoDB
@@ -18,19 +18,27 @@ cloudinary
 pillow
 
 # Machine Learning / NLP
-tensorflow-cpu
-scikit-learn
+#tensorflow-cpu>=2.19.0
+scikit-learn==1.6.1
 transformers
 sentence-transformers
 spacy
-nltk
+nltk==3.8.1
 empath
 
 # CV (optional but included for now)
-opencv-python-headless
+#opencv-python-headless
 
 # Data + Utils
-numpy
+numpy==2.0.2
 pandas
 requests
 pyyaml
+
+#extra for prototype
+torch==2.4.0
+shap==0.50.0
+lime==0.2.0.1
+plotly==5.18.0
+matplotlib==3.9.2
+joblib==1.5.1

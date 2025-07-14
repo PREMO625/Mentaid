@@ -1,133 +1,267 @@
-# Mentaid Development Roadmap
+# Mentaid Frontend & Backend Implementation Plan
 
-## Phase 1: Landing Page & Core Setup
+## Current Phase: Landing Page & Authentication
 
-### Frontend Setup (React + Vite)
-- [ ] Initialize React project with Vite
-- [ ] Set up TailwindCSS for styling
-- [ ] Configure basic routing structure
-- [ ] Set up ESLint and Prettier for code quality
-- [ ] Create responsive layout components
+### Frontend Implementation Plan
 
-### Landing Page Components
-- [ ] Create Header component with navigation
-  - Logo
-  - Navigation links (Home, Features, How It Works, About, Contact)
-  - Auth buttons (Sign In/Sign Up)
-  - Mobile-responsive menu
+#### 1. Frontend Project Structure (Vite + React)
+- [ ] Update Frontend Structure
+  - [ ] Move from viteapp to proper Frontend folder structure
+  - [ ] Create proper component organization
+  - [ ] Set up Vite configuration for production
 
-- [ ] Hero Section
-  - Compelling headline and subheadline
-  - Call-to-action buttons
-  - Dashboard preview/illustration
-  - Smooth scroll behavior
+#### 2. Landing Page Structure
+- [ ] Create React-based landing page with:
+  - [ ] Hero section with app description
+  - [ ] Login/Signup buttons
+  - [ ] Navigation bar
+  - [ ] Footer with contact info
+  - [ ] Responsive design
 
-- [ ] Features Section (3-column grid)
-  - AI-Powered Analysis card
-  - Privacy First card
-  - Clinician Dashboard card
-  - Hover effects and animations
+#### 3. Authentication Pages
+- [ ] Login Page
+  - [ ] Username/Email input
+  - [ ] Password input
+  - [ ] User type selection (Patient/Clinician)
+  - [ ] Remember me checkbox
+  - [ ] Forgot password link
+  - [ ] Login button
+  - [ ] Link to signup
 
-- [ ] How It Works Section
-  - Step-by-step process visualization
-  - Interactive elements
-  - Responsive design
+- [ ] Signup Page
+  - [ ] Username input
+  - [ ] Email input
+  - [ ] Password input
+  - [ ] Confirm password
+  - [ ] User type selection (Patient/Clinician)
+  - [ ] Terms & Conditions checkbox
+  - [ ] Signup button
+  - [ ] Link to login
 
-- [ ] Testimonials/Trust Indicators
-  - Placeholder for user testimonials
-  - Trust badges/statistics
+#### 4. Demo Dashboard Pages
+- [ ] Patient Dashboard
+  - [ ] Mood tracking slider
+  - [ ] Journal editor
+  - [ ] Profile section
+  - [ ] Quick stats
 
-- [ ] Footer
-  - Quick links
-  - Social media icons
-  - Copyright information
-  - Privacy policy and terms links
+- [ ] Clinician Dashboard
+  - [ ] Patient list
+  - [ ] Analysis dashboard
+  - [ ] Summary view
+  - [ ] Search functionality
 
-### UI Components Library
-- [ ] Button component (primary, secondary, outline variants)
-- [ ] Card component
-- [ ] Input field component
-- [ ] Modal/Dialog component
-- [ ] Loading states
+#### 5. Frontend Technical Setup
+- [ ] Project structure
+  ```
+  Frontend/
+  ├── src/
+  │   ├── components/
+  │   │   ├── auth/
+  │   │   ├── layout/
+  │   │   ├── common/
+  │   │   └── patient/
+  │   │   └── clinician/
+  │   ├── pages/
+  │   │   ├── auth/
+  │   │   ├── patient/
+  │   │   └── clinician/
+  │   ├── services/
+  │   │   ├── api/
+  │   │   └── auth/
+  │   ├── utils/
+  │   │   ├── auth.js
+  │   │   └── constants.js
+  │   └── styles/
+  ├── public/
+  ├── config/
+  │   └── env.d.ts
+  └── vite.config.ts
+  ```
 
-### Styling & Theming
-- [ ] Define color palette and typography
-- [ ] Create responsive design system
-- [ ] Add smooth transitions and micro-interactions
-- [ ] Ensure accessibility compliance
+- [ ] Dependencies (Update package.json)
+  - [ ] React
+  - [ ] React Router
+  - [ ] Axios
+  - [ ] Material-UI
+  - [ ] React Icons
+  - [ ] Formik/Yup
+  - [ ] JWT Decode
+  - [ ] React Query
+  - [ ] Vite
+  - [ ] @vercel/analytics
 
-### Performance Optimization
-- [ ] Implement code splitting
-- [ ] Optimize images and assets
-- [ ] Set up basic analytics (optional)
-- [ ] Implement lazy loading for images
+#### 6. Vercel Deployment Configuration
+- [ ] Create vercel.json
+  ```json
+  {
+    "version": 2,
+    "builds": [
+      {
+        "src": "package.json",
+        "use": "@vercel/static-build"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "/index.html"
+      }
+    ],
+    "env": {
+      "VITE_API_URL": "@VITE_API_URL",
+      "VITE_HF_API_KEY": "@VITE_HF_API_KEY"
+    }
+  }
+  ```
 
-### Testing
-- [ ] Unit tests for components
-- [ ] Cross-browser testing
-- [ ] Mobile responsiveness testing
-- [ ] Performance testing
+### Backend Implementation Plan
 
-## Phase 2: User Authentication (Coming Next)
-- [ ] Backend authentication setup
-- [ ] Login/Signup forms
-- [ ] Password reset flow
-- [ ] Email verification
+#### 1. Authentication API
+- [ ] User Model
+  ```python
+  class User(BaseModel):
+      username: str
+      email: EmailStr
+      password_hash: str
+      user_type: str  # "patient" or "clinician"
+      created_at: datetime
+      updated_at: datetime
+  ```
 
-## Phase 3: Journaling Interface (Coming Soon)
-- [ ] Rich text editor
-- [ ] Voice-to-text integration
-- [ ] Entry organization
-- [ ] Basic analytics dashboard
+- [ ] Authentication Routes
+  - [ ] POST /api/auth/register
+  - [ ] POST /api/auth/login
+  - [ ] POST /api/auth/refresh-token
+  - [ ] POST /api/auth/forgot-password
+  - [ ] POST /api/auth/reset-password
 
-## Phase 4: AI Integration (Coming Soon)
-- [ ] Integrate ML models
-- [ ] Implement sentiment analysis
-- [ ] Set up pattern detection
-- [ ] Generate insights
+- [ ] JWT Authentication
+  - [ ] Token generation
+  - [ ] Token validation
+  - [ ] Refresh token system
+  - [ ] Token expiration handling
 
-## Phase 5: Clinician Dashboard (Coming Soon)
-- [ ] Patient management
-- [ ] Analytics visualization
-- [ ] Reporting tools
-- [ ] Secure messaging
+#### 2. MongoDB Setup
+- [ ] Database structure
+  ```python
+  users_collection = {
+      "username": "",
+      "email": "",
+      "password_hash": "",  # encrypted
+      "user_type": "",
+      "created_at": "",
+      "updated_at": "",
+      "last_login": ""
+  }
+  ```
 
----
+- [ ] Security measures
+  - [ ] Password hashing (bcrypt)
+  - [ ] Fernet encryption for sensitive data
+  - [ ] Rate limiting
+  - [ ] Input validation
+  - [ ] CORS configuration
 
-### Notes:
-- Each component should be modular and reusable
-- Follow mobile-first responsive design
-- Maintain consistent styling using TailwindCSS
-- Document all components with JSDoc
-- Keep performance optimization in mind from the start
-- Implement proper error boundaries and loading states
-- Ensure all interactive elements have proper focus states for accessibility
+#### 3. Backend Technical Setup
+- [ ] Project structure
+  ```
+  Backend/
+  ├── app/
+  │   ├── api/
+  │   │   ├── routes/
+  │   │   │   ├── auth.py
+  │   │   │   └── user.py
+  │   │   └── dependencies.py
+  │   ├── core/
+  │   │   ├── config.py
+  │   │   ├── security.py
+  │   │   └── database.py
+  │   ├── models/
+  │   │   ├── user.py
+  │   │   └── schemas.py
+  │   └── utils/
+  │       ├── encryption.py
+  │       └── auth_utils.py
+  └── tests/
+  ```
 
-### Dependencies to Install:
-```bash
-# Frontend
-npm install react-router-dom framer-motion @heroicons/react react-hook-form
+- [ ] Dependencies
+  - FastAPI
+  - Pydantic
+  - Motor (MongoDB async driver)
+  - bcrypt
+  - python-jose
+  - passlib
+  - cryptography
+  - python-dotenv
 
-# Development
-npm install -D tailwindcss postcss autoprefixer prettier prettier-plugin-tailwindcss
-```
+### ML Model Deployment Plan (Hugging Face Spaces)
 
-### Getting Started:
-1. Clone the repository
-2. Run `npm install` in the frontend directory
-3. Run `npm run dev` to start the development server
-4. Open `http://localhost:5173` in your browser
+#### 1. Model Setup
+- [ ] Create separate ML service
+  - [ ] SVM model deployment
+  - [ ] MentalBERT deployment
+  - [ ] SHAP/LIME implementation
+  - [ ] SOAP summary generation
 
-### Development Workflow:
-1. Create a new branch for each feature
-2. Follow the component structure
-3. Write tests for new components
-4. Submit a pull request for review
-5. Deploy to staging for testing
+- [ ] Hugging Face Spaces configuration
+  - [ ] Set up HF API endpoints
+  - [ ] Model versioning
+  - [ ] Environment variables
+  - [ ] Rate limiting
 
-### File Naming Conventions:
-- Components: `PascalCase.jsx`
-- Utilities: `camelCase.js`
-- Hooks: `useCamelCase.js`
-- CSS Modules: `ComponentName.module.css`
-- Test files: `ComponentName.test.jsx`
+### Deployment Strategy
+
+#### Frontend (Vercel)
+- [ ] Set up Vercel project
+- [ ] Configure environment variables
+- [ ] Set up build and deploy hooks
+- [ ] Configure analytics
+- [ ] Set up custom domain
+
+#### Backend (Render)
+- [ ] Set up Render deployment
+- [ ] Configure environment variables
+- [ ] Set up MongoDB connection
+- [ ] Configure SSL certificates
+- [ ] Set up monitoring
+
+#### ML Models (Hugging Face Spaces)
+- [ ] Set up HF Spaces
+- [ ] Deploy models
+- [ ] Set up API endpoints
+- [ ] Configure rate limiting
+- [ ] Set up monitoring
+
+### Integration Points
+
+#### Frontend-Backend Integration
+- [ ] API endpoints
+  - [ ] Authentication endpoints
+  - [ ] User management endpoints
+  - [ ] Error handling
+  - [ ] Loading states
+  - [ ] Toast notifications
+
+#### Security Considerations
+- [ ] Input validation
+- [ ] CSRF protection
+- [ ] XSS protection
+- [ ] Rate limiting
+- [ ] Password complexity
+- [ ] Session management
+
+### Next Steps After Authentication
+1. Implement Patient Dashboard
+2. Implement Clinician Dashboard
+3. Add journaling functionality
+4. Add mood tracking
+5. Add analysis visualization
+
+## Notes
+- All components should be reusable and modular
+- Follow clean code principles
+- Implement proper error handling
+- Add comprehensive testing
+- Document all API endpoints

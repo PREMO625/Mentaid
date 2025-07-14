@@ -1,0 +1,688 @@
+- Report
+    - TITLE
+        1. Mentaid: An AI-Assisted Mental Health Journaling and Clinical Insight Platform
+        
+        or 
+        
+        1. Mirror Mind:-||-
+    - ABSTRACT
+        
+        **Mentaid** is an AI-assisted mental health journaling and clinical insight platform designed to support early detection and monitoring of psychological conditions through user-generated written content. This initial implementation focuses on leveraging digital journaling as a low-friction, privacy-preserving, and behaviorally rich method for detecting early signs of schizophrenia.
+        
+        The platform includes two interfaces: a patient dashboard for secure, daily mood tracking and journaling, and a clinician interface that visualizes AI-generated insights, SOAP-style summaries, and clinically interpretable signals. Journals are encrypted end-to-end to ensure data privacy, and shared with clinicians only with explicit patient consent.
+        
+        The backend integrates NLP pipelines including SVMs trained on mental health Reddit data and transformer-based models like MentalBERT. Explainability tools such as SHAP, LIME, coherence scoring, and LIWC-based linguistic markers are used to generate transparent, interpretable outputs. Summaries are auto-generated using instruction-tuned LLMs via OpenRouter.
+        
+        Mentaid’s first phase establishes a scalable, modular foundation for AI-powered mental health support, using journaling as a personalized input channel. Future phases aim to expand to other disorders, incorporate voice and wearable data, and enhance clinical interoperability through FHIR standards.
+        
+    - Synopsis
+        
+        **Mentaid** is a modular, AI-assisted journaling and clinical insight platform designed to support early detection and monitoring of mental health conditions. The platform is built around the idea that regular, written self-expression—through structured or unstructured journaling—can serve as a rich source of behavioral and linguistic signals useful for clinical evaluation.
+        
+        This project focuses on the first implementation phase of Mentaid, aimed at detecting early signs of schizophrenia through natural language processing (NLP) and explainable AI. The system includes two distinct interfaces: one for patients to securely record daily mood scores and journal entries, and another for clinicians to review AI-generated insights, SOAP-style summaries, and interpretable visualizations.
+        
+        Journals are end-to-end encrypted using Fernet encryption and are only accessible to clinicians based on explicit patient consent. The backend integrates support vector machines (SVMs) trained on mental health Reddit corpora, transformer-based models like MentalBERT, and clinical signal extraction using SHAP, LIME, LIWC, and coherence-based markers. Summarization of patient input into SOAP (Subjective, Objective, Assessment, Plan) format is achieved via instruction-tuned large language models accessed through OpenRouter.
+        
+        Designed using FastAPI for the backend and Streamlit or Gradio for the front-end, the platform utilizes MongoDB Atlas for encrypted storage and Cloudinary for secure image hosting. All interactions between user and system are protected via JWT authentication, and every component is designed to be modular and scalable, enabling future integration of voice-based journaling, wearable device data, and FHIR-compliant exports.
+        
+        Through this phase, Mentaid demonstrates how AI can be safely and meaningfully integrated into digital mental health tools, balancing interpretability, privacy, and clinical utility.
+        
+    - Introduction
+        
+        ## 🧾 **3. Introduction**
+        
+        ---
+        
+        ### 📌 **3.1 General Introduction**
+        
+        > Mental health disorders, especially those involving early-stage symptoms such as hallucinations, social withdrawal, or disorganized thought patterns, often go unnoticed due to stigma, limited access to mental healthcare, or a lack of self-reporting tools. Early detection and intervention can significantly improve outcomes, particularly in conditions like schizophrenia. However, most conventional diagnosis methods require clinical visits, structured interviews, and long-term observation — which are not always accessible or scalable.
+        > 
+        > 
+        > In an increasingly digital world, AI-driven tools present a promising opportunity to augment traditional mental healthcare by enabling users to self-monitor, journal their experiences, and receive clinically meaningful insights in real-time. Our project, **Mentaid**, aims to fill this gap using natural language processing and interpretable machine learning to analyze written journal entries and deliver insights to both patients and clinicians.
+        > 
+        
+        ---
+        
+        ### 🌐 **3.2 Digitalization in the Mental Health Ecosystem**
+        
+        > Over the past decade, there has been a surge in mobile mental health applications and teletherapy platforms. Many focus on meditation, mood tracking, or chatbot-based support. However, few systems combine structured journaling with AI-driven clinical insights, while maintaining data privacy and interpretability.
+        > 
+        > 
+        > Digital journaling, when combined with NLP and behavior analysis, can serve as a scalable, low-barrier, and user-friendly way to detect patterns in mental health deterioration — particularly when users are reluctant to speak openly in therapy or don’t have immediate access to professionals. Mentaid leverages this digital journaling trend to offer an evidence-based, privacy-conscious solution that supports early-stage detection and clinical decision-making.
+        > 
+        
+        ---
+        
+        ### 📚 **3.3 Existing Work**
+        
+        > Several mental health applications like Wysa, Woebot, and Youper utilize chat-based or CBT-based approaches to support users. On the research side, numerous studies have applied NLP techniques to analyze social media posts for mental health prediction. Tools like LIWC (Linguistic Inquiry and Word Count), coherence models, and SHAP/LIME explainability methods have shown promise in detecting signals of depression, anxiety, and schizophrenia.
+        > 
+        > 
+        > However, most of these tools either do not offer clinician-facing insights, or rely on non-consensual social data (like Twitter or Reddit posts), limiting their real-world utility. Furthermore, many lack transparency, modularity, or end-to-end privacy guarantees — all of which Mentaid is designed to solve.
+        > 
+        
+        ---
+        
+        ### 💡 **3.4 Motivation**
+        
+        > Our motivation stemmed from the observation that while people often journal about their mental state, there is rarely a structured system that analyzes those entries to provide actionable clinical insights. Many patients are unable to access care in the early stages of a disorder, and clinicians often lack longitudinal behavioral data to support diagnoses.
+        > 
+        > 
+        > Mentaid seeks to empower users by giving them a safe, private space to express themselves, while allowing AI models to extract behavioral and linguistic markers that can aid in early diagnosis. At the same time, clinicians benefit from structured dashboards, summaries, and visualizations — all while respecting user consent boundaries.
+        > 
+        
+        ### 🎯 **3.5 Objective and Scope**
+        
+        The objective of this Phase One implementation is to develop a secure, modular, and scalable Minimum Viable Product (MVP) of the Mentaid platform. The system is designed to support early detection of mental health signals—specifically targeting schizophrenia in this phase—through digital journaling, natural language processing, and interpretable AI models.
+        
+        The solution includes the following core components:
+        
+        - 🔐 **Encrypted journaling and mood tracking** for patients, with privacy-preserving data storage using Fernet encryption.
+        - 🧠 **NLP-based classification** of schizophrenia indicators using both Support Vector Machines (SVM) trained on Reddit mental health datasets and transformer-based models such as MentalBERT.
+        - 📝 **AI-generated SOAP summaries** for clinicians, created through instruction-tuned large language models to support professional review.
+        - 📊 **Clinically interpretable visualizations** using SHAP (SHapley Additive exPlanations), LIME (Local Interpretable Model-Agnostic Explanations), LIWC (Linguistic Inquiry and Word Count), and coherence-based markers.
+        - 🧍‍♂️🧑‍⚕️ **Dual interface system**: A patient-facing dashboard for journaling and a clinician-facing dashboard for secure, consent-based insight review.
+        
+        The scope of this report and project is limited to the successful implementation and demonstration of the above features under Phase One. Future expansions—including voice-based journaling, conversational LLM integration, wearable health data analysis, and compliance with FHIR (Fast Healthcare Interoperability Resources) standards—are out of scope for this phase but are planned for future iterations and are discussed in the conclusion and future work sections.
+        
+    - Concepts and methods
+        
+        ## 🧾 **4. Concepts and Methods**
+        
+        ---
+        
+        ### 🧰 **4.1 Tools and Technologies Used**
+        
+        | Layer | Tools/Frameworks | Purpose |
+        | --- | --- | --- |
+        | **Frontend** | Streamlit | Rapid prototyping of journaling & clinician dashboards |
+        | **Backend** | FastAPI, python-jose, passlib, python-dotenv | REST API, JWT auth, password hashing, secure environment config |
+        | **NLP Models** | Hugging Face Transformers (MentalBERT) | Transformer-based classification, linguistic signal extraction |
+        | **Lightweight Models** | Scikit-learn, SVM, TF-IDF Vectorizer | Classical classification pipeline trained on Reddit dataset |
+        | **Data Processing** | Pandas, spaCy, NLTK, Empath | Tokenization, linguistic feature extraction, empathy/emotion scoring |
+        | **Explainability** | SHAP, LIME, LIWC-style analysis | Interpretable NLP for clinician visualization |
+        | **LLM Summarization** | OpenRouter API (Claude/Mistral) | SOAP-format summaries from journal entries |
+        | **Database** | MongoDB Atlas + Motor (Async Driver) | Encrypted storage of user data & journaling history |
+        | **Image Handling** | Cloudinary, Pillow | Secure profile image upload and serving |
+        | **Encryption** | Cryptography (Fernet), Passlib | End-to-end encryption of journals and hashed user credentials |
+        | **Deployment (Phase 1)** | Localhost or Streamlit Cloud | MVP deployment on accessible, free-tier platform |
+        
+        ---
+        
+        ### 🧠 **4.2 System Overview**
+        
+        Mentaid is a privacy-preserving, AI-assisted mental health journaling platform with two user roles: the patient and the clinician. Patients self-report daily mood scores and maintain digital journals, while clinicians access AI-generated summaries and linguistic analysis of these entries. The backend is responsible for handling secure authentication, storing encrypted entries, and invoking NLP pipelines for classification and analysis.
+        
+        ---
+        
+        ### ⚙️ **4.3 NLP and Classification Approach**
+        
+        The NLP pipeline classifies journal entries as either **CTRL** or **SCZ-like** based on both traditional and transformer-based models:
+        
+        ### 🔹 Support Vector Machine (SVM)
+        
+        - Trained on [Reddit Mental Health Dataset](https://zenodo.org/records/3941387), using:
+            - `r/schizophrenia` as positive class
+            - `r/meditation`, `r/parenting`, `r/finance`, `r/teaching` as control
+        - Preprocessing: Stopword removal, lemmatization
+        - Feature extraction: TF-IDF vectorization
+        - Model: Linear SVM with stratified K-fold cross-validation
+        
+        ### 🔹 MentalBERT (Transformer Fine-tuning)
+        
+        - MentalBERT model fine-tuned using Reddit dataset
+        - Tokenized using 512-token chunks, trained on HuggingFace + PyTorch
+        - Evaluation: F1-score, confidence thresholds
+        - Ensemble logic: Combines SVM + MentalBERT prediction via majority voting
+        
+        ---
+        
+        ### 🧠 **4.4 Explainability and Signal Interpretation**
+        
+        To make NLP outputs clinically usable, we integrated multiple explainability tools:
+        
+        - **SHAP:** Highlights words contributing most to classification
+        - **LIME:** Entry-specific explanation per token
+        - **LIWC-style signals:** Pronoun usage, emotional tone, negations, disfluencies
+        - **Coherence Scoring:** Detects thought disorder patterns
+        
+        All insights are visualized on the clinician dashboard.
+        
+        ---
+        
+        ### 📝 **4.5 LLM-Generated SOAP Summaries**
+        
+        Each journal entry is summarized into SOAP (Subjective, Objective, Assessment, Plan) format using LLMs via OpenRouter:
+        
+        - Models used: `mistral-7b-instruct`, `claude-3-haiku`
+        - System prompt guides summary structure
+        - Result is shared with clinicians **only if patient consents**
+        - Enhances clinician readability and report generation
+        
+        ---
+        
+        ### 🔐 **4.6 Security, Consent & Privacy Design**
+        
+        - Journals are **encrypted end-to-end** using Fernet
+        - JWT-based login for both user types
+        - Consent toggle: Patient controls if raw entries can be seen by clinician
+        - Passwords are hashed using `passlib[bcrypt]`
+        - Clinician access is logged (audit logs planned for Phase 2)
+        
+        ---
+        
+        ### 👥 **4.7 User Interfaces (Dual Role System)**
+        
+        | User Role | Key Features |
+        | --- | --- |
+        | **Patient** | Secure login, profile setup, daily mood slider, journal editor (manual + prompt), quote of the day |
+        | **Clinician** | Add patient by ID, view patient card, SOAP summary, toggle between summary/raw/analysis view, SHAP/LIME visualizations |
+        
+        Both interfaces are built with **Streamlit**, offering quick interaction with the backend API for all operations.
+        
+        ---
+        
+        ### 🏗️ **4.8 Modular and Scalable Architecture**
+        
+        Mentaid is developed with modularity as a core principle:
+        
+        - All backend routes organized by user type
+        - NLP pipeline separated into reusable service classes
+        - Future integrations planned:
+            - 🎙️ Speech-to-text journaling (Phase 2)
+            - 🧠 Prompt-based LLM journaling (Phase 2)
+            - 🧘 Wearables and physiological tracking (Phase 3)
+            - 📤 FHIR-compliant export for hospitals
+        
+        ---
+        
+        ### 🌐 **4.9 Deployment Strategy (MVP)**
+        
+        For Phase 1:
+        
+        - Backend is deployed locally or to Railway (Free-tier)
+        - Frontend hosted via Streamlit Cloud or local server
+        - `.env` secrets managed with `.env.template` + `config.py`
+        
+        In later phases, frontend will be migrated to React + Tailwind UI with Vercel hosting for performance and flexibility.
+        
+    - Literature survey
+        - the content before the table
+            
+            ## 🧾 **5. Literature Survey**
+            
+            In recent years, there has been growing interest in the use of Natural Language Processing (NLP), artificial intelligence (AI), and large language models (LLMs) for identifying and monitoring mental health conditions such as schizophrenia. This literature review explores the current landscape of academic research and applied technologies, identifies the key limitations across these approaches, and presents how **Mentaid** fills the existing gaps through an innovative, privacy-focused, and clinically interpretable journaling system.
+            
+            ---
+            
+            ### 📚 **5.1 Existing Research**
+            
+            Numerous studies have explored the linguistic and semantic characteristics of individuals with schizophrenia (SCZ), particularly focusing on coherence, disorganization, and semantic drift in speech and text. Research like *Exploring the Use of NLP for Objective Assessment of Schizophrenia* (2023) and *Semantic Characteristics of Schizophrenic Speech* (2019) demonstrates that NLP-based features can accurately predict symptom severity and offer quantitative tools for diagnosis.
+            
+            Additionally, transformer models like BERT and MentalBERT have shown promising results in studies such as *Early Depression Detection with Transformer Models* (2021), where Reddit data was used to train interpretable and performant models for mental health prediction. Meta-analyses such as *NLP and Schizophrenia: A Scoping Review* (2024) and *Linguistic Findings in Persons with Schizophrenia* (2023) confirm that coherence loss and lexical abnormalities are consistent linguistic markers in SCZ.
+            
+            Social media–based research, including *Linguistic Analysis of Schizophrenia in Reddit Posts* (2019) and *Analyzing Schizophrenic Texts from Social Media Through ML and NLP* (2024), validates Reddit as a scalable data source for detecting early symptoms using LIWC features, TF-IDF, and supervised models.
+            
+            ---
+            
+            ### 💻 **5.2 Existing Technologies**
+            
+            A few mental health tools and research prototypes incorporate conversational AI or journaling interfaces, but they tend to focus on mood disorders like depression and anxiety. For example, *MindfulDiary* (2023) and *MindScape* (2024) demonstrate how LLMs can support guided journaling and behavioral sensing. However, these platforms lack integration with clinical explainability tools or schizophrenia-specific features.
+            
+            Meanwhile, some speech-focused systems like *Sch-net* and *ASR-NLP pipelines* offer near real-time voice-based detection, but they require clinical-grade datasets, lack journaling support, and often ignore explainability and user consent management.
+            
+            Lastly, major platforms like Woebot, Wysa, and Youper offer AI companions for CBT and mood tracking, but their underlying models are opaque, and they do not provide clinicians with transparent insights or structured reports like SOAP.
+            
+            ---
+            
+            ### ❌ **5.3 Identified Gaps in the Literature & Tools**
+            
+            Despite the advancements in NLP and AI for mental health, the following gaps persist:
+            
+            | Gap | Explanation |
+            | --- | --- |
+            | **Lack of clinically interpretable output** | Most tools provide black-box predictions without SHAP, LIME, or LIWC insights. |
+            | **Insufficient support for SCZ detection** | Existing tools focus on depression/anxiety; schizophrenia detection is underrepresented. |
+            | **No dual-interface platforms** | Very few systems allow both patients and clinicians to interact with journaling data meaningfully. |
+            | **Missing secure journaling pipelines** | Journals are often stored in plaintext, raising privacy concerns. |
+            | **Absence of consent-aware data sharing** | Tools rarely give patients control over what clinicians can view (raw, summary, analysis). |
+            | **No modular backends for expansion** | Most research prototypes are single-purpose and not built for scale or multi-disorder analysis. |
+            
+            ---
+            
+            ### ✅ **5.4 How Mentaid Addresses These Gaps**
+            
+            **Mentaid** directly tackles these limitations through a technically rigorous and user-centered architecture:
+            
+            - Uses **MentalBERT + SVM** ensemble classifiers trained on real-world Reddit mental health data
+            - Provides **explainable AI** outputs via **SHAP**, **LIME**, **LIWC**, and coherence markers
+            - Supports **SOAP summaries** generated by LLMs for clinician readability
+            - Separates frontend into **dual interfaces** — one for patients, one for clinicians
+            - Enables **end-to-end encryption** of journal entries using Fernet
+            - Introduces a **consent management layer** where patients can choose how much to share
+            - Designed with a **modular backend**, ready for STT, LLM journaling, and wearable integration in future phases
+            
+            ---
+            
+            Through these innovations, Mentaid offers a unique, scalable, and clinically-aligned solution that bridges the gap between raw journaling and actionable mental health insights — something not yet realized in existing literature or products.
+            
+        - The table
+            
+            
+            | **Paper Title / Year** | **Methodology** | **Benefits** | **Limitations / Future Scope** | **Link** |
+            | --- | --- | --- | --- | --- |
+            | **Exploring the Use of NLP for Objective Assessment of Schizophrenia** (2023) | Collected speech samples from SCZ patients; used NLP (BERT), linguistic markers (coherence, surprisal), and ML (SVM) to correlate language with psychosis severity. | Enabled objective markers of disorganized speech; strong correlation to clinical scales (SAPS/SANS/TLC); predictive accuracy up to 82%. | Very small dataset (22 samples from 7 patients); lacks generalizability; needs larger clinical trials. | [Link](https://pmc.ncbi.nlm.nih.gov/articles/PMC10499191/) |
+            | **Natural Language Processing and Schizophrenia: A Scoping Review** (2024) | Reviewed 18 key studies from literature on NLP in SCZ; analyzed use in diagnosis, symptom tracking, linguistic patterns. | Comprehensive mapping of NLP techniques; identifies six key use-cases in SCZ detection and management. | Heterogeneity in approaches; small datasets; lack of clinical standardization. | [Link](https://pmc.ncbi.nlm.nih.gov/articles/PMC11278236/) |
+            | **Linguistic Analysis of Schizophrenia in Reddit Posts** (2019) | Used Reddit data from self-identified SCZ users; extracted LIWC linguistic features; trained classifiers for SZ prediction. | Shows social media is a viable, scalable signal source; LIWC-based classifiers worked well. | Self-reported data; possible mislabeling; dataset not publicly released. | [Link](https://www.researchgate.net/publication/332844683_Linguistic_Analysis_of_Schizophrenia_in_Reddit_Posts) |
+            | **Semantic Characteristics of Schizophrenic Speech** (2019) | Used latent semantic analysis and embedding similarity to analyze spontaneous SCZ speech; focused on coherence. | Provides semantic disorganization metrics that align with clinical judgment; strong theoretical foundation. | Speech dataset limitations; generalization across languages not tested. | [Link](https://arxiv.org/abs/1904.07953) |
+            | **Natural Language Processing Applied to Mental Illness Detection** (2022) | Reviewed mental health NLP studies; social media datasets, transformer models (BERT), feature extraction. | Broad coverage of NLP approaches; positions SCZ within wider MH context. | More focused on depression/anxiety; lacks deep SCZ-specific modeling. | [Link](https://www.nature.com/articles/s41746-022-00589-7) |
+            | **Sch-net: Deep Learning for Automatic Detection of Schizophrenia** (2021) | Used CNN with skip connections and CBAM for raw speech classification; trained on SCZ dataset. | 97.68% accuracy; speech-only classification; automatic end-to-end system. | Dataset small (28 SCZ + 28 CTRL); private dataset; lacks linguistic breakdown. | [Link](https://link.springer.com/article/10.1186/s12938-021-00915-2) |
+            | **MindfulDiary: Harnessing LLMs to Support Psychiatric Journaling** (2023) | LLM-powered app for guided journaling; pre-journaling PHQ-9; summaries + clinician view. | First real-world journaling platform with conversational LLMs; improved empathy & data richness. | More focused on depression; doesn’t address SCZ-specific NLP needs. | [Link](https://arxiv.org/abs/2310.05231) |
+            | **Contextual AI Journaling with Behavioral Sensing (MindScape)** (2024) | Combines LLM-generated journaling prompts with passive data (sleep, activity) for college students. | Advanced hybrid system with real-world behavioral context; promotes well-being. | Not validated for clinical use; lacks SCZ focus; early-stage study. | [Link](https://arxiv.org/abs/2404.00487) |
+            | **Early Depression Detection with Transformer Models** (2021) | Used MentalBERT to detect depression from Reddit posts; applied topic modeling + surrogate model for interpretability. | Strong transformer performance for early depression signs; interpretable approach. | Targets depression; method transferable, but needs tuning for SCZ. | [Link](https://aisel.aisnet.org/cgi/viewcontent.cgi?article=1540&context=hicss-56) |
+            | **Schizophrenia: A Survey of AI Techniques for Detection & Classification** (2021) | Literature review of SCZ classification across sMRI, EEG, speech using AI; emphasizes multimodal fusion. | Highlights promise of AI in diagnosis; confirms SVM's relevance; mentions speech/language as future modality. | Neuroimaging-heavy; doesn’t go deep into text-based NLP. | [Link](https://www.mdpi.com/1660-4601/18/11/6099) |
+            | **Semantic-based NLP Techniques Discriminate Schizophrenia and Wernicke’s Aphasia Based on Spontaneous Speech** (2024) | Compared spontaneous speech from SCZ and aphasia patients using semantic similarity metrics; applied NLP embeddings and coherence scoring. | Highlights the ability of NLP to distinguish disorders with overlapping symptoms; validates semantic embeddings in clinical speech. | Focuses only on English; dataset size and speech diversity are limited. | [Link](https://aclanthology.org/2024.rapid-1.1/) |
+            | **Combining Automatic Speech Recognition with Semantic NLP in Schizophrenia** (2023) | Combined ASR outputs from SCZ speech with downstream semantic NLP tasks to measure coherence and disorganization. | Shows feasibility of using off-the-shelf ASR + NLP for real-time schizophrenia monitoring; adds robustness to voice pipelines. | No large-scale deployment tested; speech quality affects ASR-NLP performance. | [Link](https://dspace.library.uu.nl/bitstream/handle/1874/459191/1-s2.0-S0165178123002020-main.pdf) |
+            | **Artificial Intelligence and Schizophrenia: Crossing the Limits of the Human Brain** (2023) | Explores AI potential in modeling SCZ from multi-modal data (EEG, MRI, text); emphasizes explainability and hybrid approaches. | Philosophical + technical discussion; emphasizes AI-human collaboration in psychiatry. | Very conceptual; lacks concrete implementation or code/dataset. | [Link](https://www.intechopen.com/chapters/1185407) |
+            | **Analyzing Schizophrenic Texts from Social Media Through ML and NLP** (2024) | Applied supervised learning on Reddit-based SCZ posts; linguistic features + classification tasks using LIWC/N-grams. | Reinforces social media as early diagnostic source; uses interpretable linguistic models. | Self-disclosed SCZ may be unreliable; model bias risk if not cross-validated properly. | [Link](https://ieeexplore.ieee.org/document/10797002) |
+            | **Linguistic Findings in Persons with Schizophrenia – A Review of Current Literature** (2023) | Meta-review of speech and text analysis in SCZ; focuses on coherence loss, semantic drift, and lexical flattening. | Strong synthesis of psycholinguistic patterns; confirms NLP directions taken by current tools. | Not ML-focused; lacks engineering component. | [Link](https://pubmed.ncbi.nlm.nih.gov/38078276/) |
+    - Project Plan
+        
+        ## 🧾 **6. Project Plan**
+        
+        This chapter outlines the structured timeline, phase-wise execution, and key resource allocation for the development of **Mentaid**, an AI-assisted mental health journaling and clinician insight platform. The internship spanned from **June 15 to July 15, 2025**, with deliverables spread across four distinct weeks.
+        
+        ---
+        
+        ### 📆 **6.1 Project Timeline & Weekly Milestones**
+        
+        | **Week** | **Focus Areas** | **Key Tasks** |
+        | --- | --- | --- |
+        | **Week 1**  *June 15–June 22* | **Foundational Research & Problem Scoping** | - Conducted in-depth literature review (15 papers)  - Explored Reddit + DAIS-C datasets  - Defined Phase 1 scope (SCZ detection via journaling)  - Finalized clinical markers & NLP model direction  - Outlined modular + scalable system architecture |
+        | **Week 2**  *June 23–June 30* | **Model Training & Evaluation** | - Built baseline classifiers: **SVM, XGBoost**  - Fine-tuned **MentalBERT** on Reddit dataset  - Applied LIWC, coherence metrics, and linguistic marker extraction  - Evaluated ensemble model with stratified CV  - Integrated **SHAP** and **LIME** for explainability |
+        | **Week 3**  *July 1–July 7* | **Prototype Design & Feature Development** | - Designed backend with **FastAPI**, encryption (Fernet), JWT auth  - Implemented MongoDB storage, consent logic, user roles (Patient, Clinician)  - Developed journaling and mood UI using **Streamlit**  - Began integration of **LLM-based SOAP summary** via OpenRouter  - Scoped out Whisper STT integration for Phase 2 |
+        | **Week 4**  *July 8–July 15* | **Deployment, UI, and Documentation** | - Finalized frontend prototype for dual-interface (Patient + Clinician)  - Connected backend to journaling and analysis dashboards  - Conducted internal user testing + clinician view toggles  - Wrote complete IEEE report content and Literature Survey (Geet)  - Satyam handled formatting, report assembly, and PPT creation  - Completed debugging and prepared project demo setup |
+        
+        ---
+        
+        ### 🧑‍💻 **6.2 Resource Allocation**
+        
+        | **Team Member** | **Role** | **Key Contributions** |
+        | --- | --- | --- |
+        | **[Your Name]** | Backend & AI Development | - Trained SVM & MentalBERT models  - Integrated NLP pipeline, SHAP/LIME, LIWC markers  - Built and deployed backend APIs with encryption/authentication  - Created core logic for journaling, mood scoring, patient/clinician flows |
+        | **Satyam** | Documentation ,Researcher and Frontend Design | - Created IEEE report structure and formatted final chapters  - Designed and structured the PowerPoint presentation  - Coordinated syncing of visuals with backend progress  - Ensured on-time submission & presentation readiness |
+        
+        ---
+        
+        ### 🏁 **6.3 Phase Breakdown**
+        
+        | **Phase** | **Milestone** | **Deliverable** |
+        | --- | --- | --- |
+        | **Phase 1** | MVP for Schizophrenia detection via journaling | - Dual interface prototype (Patient + Clinician)  - Encrypted journaling, mood scoring  - AI-based insights (MentalBERT + SVM + SHAP/LIME)  - SOAP summaries via OpenRouter |
+        | *(Planned)* **Phase 2** | Conversational journaling + Speech-to-text | - Whisper-based STT integration  - Prompt-based LLM journaling  - Clinician feedback modules |
+        | *(Planned)* **Phase 3** | Wearable data + FHIR compliance | - HRV, sleep, and behavior metrics  - Export to FHIR JSON format  - Longitudinal mental health graphing |
+        
+        ---
+        
+        This project plan reflects a balance of clinical insight, technical depth, and usability testing — all within a strict 4-week internship window. The modular structure ensures easy upgrades in future phases.
+        
+    - Proposed Solution
+        
+        ## 🧾 **7. Proposed Solution**
+        
+        ---
+        
+        ### 🧠 **7.1 Overview of Final Solution**
+        
+        **Mentaid** is an AI-powered, dual-interface mental health journaling and clinician insight platform, developed as a Minimum Viable Product (MVP) during the IEEE EMBS Internship 2025. This platform is designed to support early detection and clinical interpretation of **schizophrenia-related symptoms** by analyzing encrypted user-generated journal entries through NLP models, explainability tools, and LLM-based summaries.
+        
+        The system consists of:
+        
+        - A secure **Patient Interface** for self-journaling and mood tracking
+        - A **Clinician Dashboard** for insight visualization, SOAP summaries, and longitudinal tracking
+        - An explainable backend AI engine combining traditional and transformer-based models
+        - End-to-end **privacy-first design** with encryption and consent-aware data access
+        
+        The project is modular, scalable, and built with real-world deployment in mind.
+        
+        ---
+        
+        ### 👤 **7.2 Target Audience**
+        
+        | **User Type** | **Description** | **Needs Addressed by Mentaid** |
+        | --- | --- | --- |
+        | **Patients / Common Users** | Individuals experiencing early signs of mental distress, especially those at risk of schizophrenia | - A private and judgment-free space for expression  - Mood tracking and journaling in both free and guided (prompt) modes  - Peace of mind through encryption and full data control |
+        | **Clinicians / Psychiatrists / Therapists** | Mental health professionals in outpatient or telehealth settings | - Quick summaries via SOAP structure  - Interpretable NLP-driven signals and linguistic breakdown  - Role-based access to journals, analysis, or summaries only based on patient consent |
+        | **Mental Health Researchers (Future Scope)** | Analysts studying patient behavior trends over time | - Access to anonymized, longitudinal behavioral insights  - Potential for federated learning or real-world disorder prediction research |
+        
+        ---
+        
+        ### 🧩 **7.3 Core Features Implemented in Phase One**
+        
+        ### 🧍‍♂️ **Patient Interface (User 1)**
+        
+        - **Registration & Authentication**: Secure signup/login using JWT and hashed passwords
+        - **Encrypted Journaling**: Daily entries saved using Fernet symmetric encryption
+        - **Mood Tracking**: One-click emoji-based scoring system per day (0–5 scale)
+        - **Quote of the Day**: Randomly served motivational/funny quotes from an internal quote bank
+        - **Prompt-based Journaling (Basic)**: LLM-assisted writing prompts (integrated via OpenRouter)
+        - **Journal History View**: Visual tracking of mood patterns (line/bar chart)
+        - **Profile Management**: Basic details + profile image stored securely via Cloudinary
+        
+        ---
+        
+        ### 🧑‍⚕️ **Clinician Interface (User 2)**
+        
+        - **Patient Onboarding**: Add patient by unique ID (assigned during user registration)
+        - **Dashboard Overview**: Metrics like total patients, pending reviews, weekly improvement flags
+        - **Searchable Patient List**: Filter and access patient modules quickly
+        - **Patient Modal Card**: Displays user summary, profile, and consent settings
+        - **Toggle View Access**: Based on patient consent, clinician can access:
+            - 🔒 *Raw Journals*
+            - 🧾 *LLM-generated SOAP summaries*
+            - 📈 *Only analysis (SHAP, LIME, LIWC, coherence)*
+        - **Analysis Visualizations**:
+            - SHAP bar plots for interpretability
+            - LIWC keyword tags (emotion, pronouns, disfluency, negation)
+            - Sentence coherence indicators
+            - Classifier output with confidence scores
+        - **Clinician Notes**: Optional field for doctor to write and save private notes
+        
+        ---
+        
+        ### ⚙️ **7.4 Technical Backbone**
+        
+        | Layer | Tool/Component | Purpose |
+        | --- | --- | --- |
+        | **Frontend** | Streamlit (dual UI) | Builds rapid dashboards for user and clinician |
+        | **Backend** | FastAPI, MongoDB, Fernet | Handles routes, encrypted storage, and model pipelines |
+        | **ML Models** | SVM (TF-IDF) + MentalBERT | SCZ detection using Reddit-trained ensemble classifiers |
+        | **Explainability** | SHAP, LIME, LIWC | Breaks down predictions into human-readable insights |
+        | **Summarization** | OpenRouter LLM API | Generates SOAP summaries from journals |
+        | **Security** | JWT + Fernet Encryption | Role-based access control and data protection |
+        | **Storage** | MongoDB Atlas, Cloudinary | Text + image storage via free-tier secure services |
+        
+        ---
+        
+        ### 🚀 **7.5 What Makes Mentaid Unique**
+        
+        | ❌ Existing Tools | ✅ How Mentaid Improves |
+        | --- | --- |
+        | Journaling apps like Wysa and Woebot don’t allow clinician access or AI explainability | Mentaid offers real-time dashboards for doctors with AI-driven linguistic markers |
+        | Most NLP models are black-box, with no SHAP/LIME/LIWC integration | Mentaid provides **clinically interpretable AI** for each journal entry |
+        | No tool focuses on **schizophrenia-specific markers** | Mentaid targets SCZ with fine-tuned models trained on Reddit & validated metrics |
+        | Journals are often stored plaintext | Mentaid encrypts journals end-to-end using Fernet encryption |
+        | Patients lack control over what gets shared | Mentaid uses **consent toggles** to share only raw, summary, or analysis view |
+        | No scalable architecture for STT, wearables, etc. | Mentaid backend is modular and ready for Phase 2 (STT) and Phase 3 (HRV, FHIR) |
+        
+        ---
+        
+        ### 🌱 **7.6 Planned Extensions (Post-Phase One)**
+        
+        | Phase | Feature | Description |
+        | --- | --- | --- |
+        | **Phase 2** | Whisper-based STT journaling | Voice-to-text entries for accessibility and naturalism |
+        |  | Prompt-based Conversational Journaling | Guided, LLM-powered journaling sessions |
+        |  | Clinician Feedback System | Enable clinicians to rate, comment on AI summaries |
+        | **Phase 3** | Wearable Integration | Track HRV, sleep, and behavior for deeper context |
+        |  | FHIR Compliance | Export clinical insights in standardized healthcare format |
+        |  | Longitudinal Analytics | Track mental health markers over time with personalized baselines |
+        
+        ---
+        
+        ### 💬 **7.7 Summary**
+        
+        **Mentaid** is not just a journal app — it’s a **clinically useful, privacy-focused AI solution** built for the future of mental healthcare. It empowers patients with a safe space for self-expression and gives clinicians the insights they need to act early, interpret signals transparently, and personalize care pathways. By combining explainable AI with encrypted journaling, Mentaid uniquely bridges the gap between mental health self-care and actionable clinical insights — something no existing tool in the market currently does.
+        
+    - Results
+        - Placeholders images
+            - 1.8.1 MentalBERT confusion Matrix
+                
+                ![download.png](attachment:2381e2af-3364-4640-a1d1-8092f8fce255:download.png)
+                
+            - 8.2 svm test eval
+                
+                ![image.png](attachment:d37f1c5f-9862-428f-8a37-afdeae7747c2:image.png)
+                
+            - 8.3 custom test eval of svm
+                
+                ![image.png](attachment:b0bb7f66-6403-4a89-befb-e49ec21c688b:image.png)
+                
+            - Note
+                
+                Images of main web app i will need you just for the time sake insert any placeholders images.
+                
+        
+        ## 🧾 **8. Results**
+        
+        This chapter presents the outcomes of the **Phase 1 MVP implementation** of the Mentaid platform. The results cover backend model performance metrics, explainability observations, and the end-to-end system integration of the journaling and clinical insight interfaces. All evaluations were conducted using both standardized test data and synthetic journaling data to validate real-world applicability.
+        
+        ---
+        
+        ### 🧪 **8.1 NLP Model Evaluation**
+        
+        ### 🔹 **MentalBERT (Transformer-Based) Evaluation**
+        
+        The MentalBERT model, fine-tuned on the Reddit mental health dataset, achieved highly promising results, indicating its strong suitability for schizophrenia-related linguistic analysis:
+        
+        - **Accuracy**: 0.9681
+        - **Precision**: 0.9825
+        - **Recall**: 0.9493
+        - **F1 Score**: 0.9656
+        
+        📊 *Confusion Matrix:*
+        
+        > (See Figure 8.1 below)
+        > 
+        > 
+        > **[Placeholder – attach MentalBERT Confusion Matrix image here]**
+        > 
+        
+        ---
+        
+        ### 🔹 **SVM Classifier (TF-IDF + Linear SVM) Evaluation**
+        
+        The linear SVM model, trained using TF-IDF vectors from the same Reddit dataset, also performed well on the held-out test set:
+        
+        - **Accuracy**: 0.9431
+        - **Macro Avg F1 Score**: 0.94
+        - **Weighted Avg F1 Score**: 0.94
+        
+        📊 *Classification Report:*
+        
+        ```
+        text
+        Copy code
+                      precision    recall  f1-score   support
+        
+                   0       0.93      0.97      0.95      1300
+                   1       0.96      0.91      0.94      1164
+        
+        ```
+        
+        📊 *Confusion Matrix:*
+        
+        > (See Figure 8.2 below)
+        > 
+        > 
+        > **[Placeholder – attach SVM Confusion Matrix image here]**
+        > 
+        
+        ---
+        
+        ### 🔸 **Custom Dataset Testing (Synthetic Journaling Inputs)**
+        
+        To simulate actual journaling input from users (average length: ~931 characters), a synthetic dataset was curated and evaluated:
+        
+        - **Accuracy**: 0.9242
+        - **Macro Avg F1 Score**: 0.92
+        - **Precision/Recall Balance**: Maintained across both SCZ and CTRL classes
+        
+        📊 *Classification Report:*
+        
+        ```
+        text
+        Copy code
+                      precision    recall  f1-score   support
+        
+                   0       0.93      0.90      0.92        30
+                   1       0.92      0.94      0.93        36
+        
+        ```
+        
+        📊 *Confusion Matrix:*
+        
+        > (See Figure 8.3 below)
+        > 
+        > 
+        > **[Placeholder – attach Custom Dataset Confusion Matrix image here]**
+        > 
+        
+        These results validate the robustness of the model pipeline in identifying schizophrenia patterns not just in structured training data, but also in **naturalistic journaling-style entries**, which forms the core of Mentaid’s real-world use case.
+        
+        ---
+        
+        ### 💻 **8.2 System Integration & Functional Outputs**
+        
+        The dual-interface MVP of Mentaid was successfully developed with all core components integrated:
+        
+        ### ✅ **Patient Interface Features:**
+        
+        - Secure signup/login (JWT auth, password hashing)
+        - Daily mood score submission
+        - Encrypted journaling (manual + LLM-prompt based)
+        - Journal visualizations (line graph for mood)
+        - Profile image upload (via Cloudinary)
+        - Quote of the day system
+        
+        🖼️ *[Placeholder: Screenshot of Patient Dashboard with mood tracker + journal input]*
+        
+        🖼️ *[Placeholder: Screenshot of encrypted journal save confirmation or history]*
+        
+        ### ✅ **Clinician Dashboard Features:**
+        
+        - Patient ID onboarding
+        - Role-based access control for viewing:
+            - Raw journals (if consented)
+            - LLM-generated SOAP summaries
+            - Analysis dashboard (SHAP, LIWC, LIME, coherence)
+        - Patient card modal view and quick access list
+        - Clinician note field
+        
+        🖼️ *[Placeholder: Screenshot of Clinician Dashboard landing page]*
+        
+        🖼️ *[Placeholder: Screenshot of Patient Card View with SOAP Summary and AI signals]*
+        
+        ---
+        
+        ### 🔍 **8.3 Explainability Outputs**
+        
+        Using SHAP, LIME, and LIWC-style linguistic markers, each journal entry produced interpretable breakdowns visible in the clinician dashboard. For instance:
+        
+        - **SHAP heatmaps** highlighted emotionally charged or disorganized phrases
+        - **LIME** presented feature importance at the token level
+        - **LIWC & Empath** categorized linguistic behavior (negations, emotion, pronouns)
+        
+        🖼️ *[Placeholder: Screenshot of SHAP explanation for a journal entry]*
+        
+        🖼️ *[Placeholder: Screenshot of LIWC/Empath analysis with visualization]*
+        
+        ---
+        
+        ### 📈 **8.4 Observations**
+        
+        - Transformer models like **MentalBERT** are more robust for complex linguistic patterns but require chunked processing and higher inference cost.
+        - SVM remains reliable for short-form or pre-processed journal-style content, especially in early-stage pipeline testing.
+        - Explainability tools greatly enhance clinician trust and reduce “black-box” skepticism in diagnosis workflows.
+        - Encrypted journaling with **consent-aware access** was successfully implemented and verified through local testing.
+        
+        ---
+        
+        ### 📌 **8.5 Summary of Results**
+        
+        | **Component** | **Status** | **Evidence of Effectiveness** |
+        | --- | --- | --- |
+        | SVM Model | ✅ Completed & Evaluated | 94% accuracy on test set |
+        | MentalBERT | ✅ Fine-tuned & Integrated | 96.8% accuracy, high F1 |
+        | Explainability Tools | ✅ Implemented (SHAP, LIME, LIWC) | Interpretable visualizations functional |
+        | Frontend (Patient UI) | ✅ Prototype complete | Streamlit-based UI with journaling, mood |
+        | Frontend (Clinician UI) | ✅ Dashboard built | Toggle views, patient card, SOAP |
+        | Data Security | ✅ Encrypted entries working | Fernet & hashed storage verified |
+        | Custom Testing | ✅ Done | 92.4% accuracy on simulated real-user data |
+    - Conclusion
+        
+        ## 🧾 **9. Conclusion and Future Work**
+        
+        ---
+        
+        ### ✅ **9.1 Key Findings & Achievements**
+        
+        The **Mentaid** project successfully delivers a functional, scalable, and privacy-focused MVP that enables early detection and clinical insight generation for schizophrenia through journaling data. It bridges a critical gap between self-reported mental health data and clinician-accessible AI insights.
+        
+        Key accomplishments include:
+        
+        - ✅ Development of a **dual-interface platform** with distinct roles for patients and clinicians.
+        - ✅ **Encrypted journaling system** that ensures total privacy of user data.
+        - ✅ Deployment of an **ensemble classification model** combining:
+            - **Support Vector Machine (SVM)** with TF-IDF features
+            - **MentalBERT**, a fine-tuned transformer-based classifier
+        - ✅ Integration of **explainable AI** tools like **SHAP, LIME, and LIWC** for clinically interpretable outputs.
+        - ✅ Real-time generation of **SOAP-format summaries** using instruction-tuned **LLMs via OpenRouter**.
+        - ✅ Successful handling of **custom journaling-style test data**, validating the model's real-world potential.
+        - ✅ Implementation of **consent-aware access control**, giving patients full authority over what clinicians can view.
+        
+        These outcomes establish Mentaid as a viable tool for supporting early-stage schizophrenia detection and AI-assisted clinical review — a much-needed intervention in today’s under-resourced mental health infrastructure.
+        
+        ---
+        
+        ### 💡 **9.2 Insights Gained**
+        
+        Through this project, several deep insights emerged:
+        
+        - **Language is diagnostic**: Subtle shifts in linguistic structure, coherence, and pronoun use can act as early indicators of mental health shifts — particularly in psychosis-spectrum disorders.
+        - **Explainability boosts trust**: Clinicians are more likely to engage with AI when its decisions are traceable and interpretable.
+        - **Consent matters**: Giving users control over their data-sharing preferences increases system transparency and potential adoption.
+        - **Journaling ≠ simple text**: Journal entries reflect deeply emotional, nonlinear thought patterns — and require specialized models to process meaningfully.
+        - **Transformer models are powerful** but computationally expensive — traditional ML still holds ground for fast, low-latency screening.
+        
+        ---
+        
+        ### 🚧 **9.3 Limitations**
+        
+        While Mentaid achieves its Phase 1 goals, several limitations remain:
+        
+        | Area | Limitation |
+        | --- | --- |
+        | **Model Generalization** | Training data (Reddit posts) may not fully represent formal journal entries or clinical notes. |
+        | **Deployment Constraints** | MVP is hosted in free-tier environments; may not scale well under real-time, concurrent loads. |
+        | **STT & Wearables** | Speech-to-text journaling and physiological tracking are scoped for future phases. |
+        | **User Testing** | No live patient or clinician testing was conducted due to scope and time limits. |
+        | **Language Scope** | Currently supports only English; multilingual adaptation is needed. |
+        
+        ---
+        
+        ### 🌱 **9.4 Future Scope**
+        
+        The modular architecture of Mentaid allows it to evolve beyond the MVP and incorporate advanced capabilities in future phases:
+        
+        ### 🔹 **Phase 2**:
+        
+        - Integration of **Whisper-based speech-to-text journaling**
+        - Addition of **conversational LLMs** for prompt-based self-reflection
+        - Clinician **feedback loops and progress notes**
+        - Real-time notifications for crisis flagging
+        
+        ### 🔹 **Phase 3**:
+        
+        - Syncing with **wearable health devices** (HRV, sleep, steps)
+        - FHIR-compatible export for **hospital integration and EHR systems**
+        - **Longitudinal analytics** to detect relapse risk and monitor behavioral improvement
+        - Support for **multiple mental health disorders** beyond schizophrenia (e.g., BPD, depression, anxiety)
+        
+        ---
+        
+        ### ✨ **9.5 Final Remarks**
+        
+        Mentaid demonstrates how **AI + NLP + empathy-first design** can create impactful solutions for modern mental health care. With a commitment to privacy, explainability, and patient empowerment, the system shows that it's possible to **detect clinical insights from everyday language** — without compromising safety or dignity.
+        
+        The work done in Phase 1 lays a solid foundation for future development into a full-scale AI-powered clinical companion — and represents a step forward in making mental health tech smarter, safer, and more human.

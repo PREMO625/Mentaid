@@ -2,11 +2,13 @@
 /.env
 /Datasets
 /DUMP
-/MODELS MADE
+/Backend/MODELS MADE
 /Notebooks
 /prd.md
 /.blackboxrules
 /Others
+/Backend/Prototype/ACCESS_MODELS
+
 
 # 💻 Virtual environment
 venv/

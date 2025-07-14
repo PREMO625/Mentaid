@@ -14,9 +14,12 @@ class NLPModel:
         base_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'MODELS MADE', 'NLP TRANSFORMER')
         
         try:
+            # Force CPU device to avoid meta tensor issues
             self.model = AutoModelForSequenceClassification.from_pretrained(
                 base_path,
-                num_labels=2  # As per the original implementation
+                num_labels=2,
+                torch_dtype=torch.float32,  # Use float32 for CPU
+            
             )
             self.tokenizer = AutoTokenizer.from_pretrained(base_path)
             self.model.eval()  # Set model to evaluation mode
@@ -68,6 +71,8 @@ class NLPModel:
                               padding=True)
         
         with torch.no_grad():
+            # Move inputs to CPU if needed
+            inputs = {k: v.to('cpu') if isinstance(v, torch.Tensor) else v for k, v in inputs.items()}
             outputs = self.model(**inputs)
             
         # Get probability of positive class

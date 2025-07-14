@@ -2,6 +2,21 @@ import streamlit as st
 import os
 from datetime import datetime
 import json
+import plotly.express as px
+import pandas as pd
+from liwc_analyzer import LIWCAnalyzer
+
+from models.svm_model import SVMModel
+from models.nlp_model import NLPModel
+from text_utils import chunk_text_svm, chunk_text_nlp, average_predictions
+import plotly.graph_objects as go
+import shap
+import lime.lime_text
+from lime.lime_text import LimeTextExplainer
+import numpy as np
+import matplotlib.pyplot as plt
+import cloudinary.uploader
+import cloudinary.api
 
 # Page configuration
 st.set_page_config(
@@ -9,6 +24,19 @@ st.set_page_config(
     page_icon="🧠",
     layout="wide"
 )
+
+# Initialize LIWC analyzer
+liwc_analyzer = LIWCAnalyzer()
+
+def analyze_text(text):
+    """
+    Function to analyze text and return psychological category analysis
+    """
+    if not text:
+        return None
+    
+    # Get detailed analysis
+    return liwc_analyzer.get_category_stats(text)
 
 def save_to_local_storage(key, value):
     """Save data to browser local storage"""
@@ -209,9 +237,63 @@ def create_prediction_chart(predictions):
     )
     return fig
 
+    return None
+        
+    # Get detailed analysis
+    return liwc_analyzer.get_category_stats(text)
+
 def main():
     # Sidebar navigation
     st.sidebar.title("Navigation")
+    
+    # Main content
+    st.title("Text Analysis Dashboard")
+    
+    # Text input
+    text_input = st.text_area("Enter text to analyze:", height=200)
+    
+    if st.button("Analyze Text"):
+        if text_input:
+            analysis = analyze_text(text_input)
+            if analysis:
+                st.subheader("Analysis Results")
+                
+                # Display basic statistics
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Total Words", analysis['total_words'])
+                    st.metric("Average Word Length", f"{analysis['avg_word_length']:.2f}")
+                with col2:
+                    st.metric("Total Sentences", analysis['total_sentences'])
+                    st.metric("Most Prominent Emotion", analysis['most_prominent_emotion'])
+                
+                # Display emotion scores
+                st.subheader("Emotion Analysis")
+                emotion_categories = [cat for cat in analysis['category_scores'] if "emotion" in cat]
+                emotion_scores = {cat: analysis['category_scores'][cat] for cat in emotion_categories}
+                
+                # Create bar chart for emotions
+                emotions_df = pd.DataFrame(list(emotion_scores.items()), columns=['Emotion', 'Score'])
+                fig = px.bar(emotions_df, x='Emotion', y='Score', title='Emotion Distribution')
+                st.plotly_chart(fig)
+                
+                # Display other category scores
+                st.subheader("Psychological Categories")
+                other_categories = [cat for cat in analysis['category_scores'] if cat not in emotion_categories]
+                other_scores = {cat: analysis['category_scores'][cat] for cat in other_categories}
+                
+                # Create radar chart for other categories
+                other_df = pd.DataFrame(list(other_scores.items()), columns=['Category', 'Score'])
+                fig = px.line_polar(other_df, r='Score', theta='Category', line_close=True, title='Psychological Profile')
+                st.plotly_chart(fig)
+                
+                # Display top categories
+                st.subheader("Top Categories")
+                sorted_categories = sorted(analysis['category_scores'].items(), key=lambda x: x[1], reverse=True)[:5]
+                for cat, score in sorted_categories:
+                    st.write(f"- {cat}: {score:.2f}%")
+        else:
+            st.warning("Please enter some text to analyze")
     page = st.sidebar.radio("Go to", ["User Interface", "Clinician Dashboard"])
     
     if page == "User Interface":

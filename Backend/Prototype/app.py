@@ -166,16 +166,24 @@ def clinician_dashboard():
             "shap": shap_vals[top_idx]
         })
         st.markdown("**Top-20 SHAP tokens**")
-        st.dataframe(shap_df.style.background_gradient(cmap="RdBu", center=0))
+        abs_max = np.max(np.abs(shap_vals))
+        styled = shap_df.style.background_gradient(cmap="RdBu", vmin=-abs_max, vmax=abs_max)
+        st.dataframe(styled)
 
-        # ---------- LIME ----------
+                # ---------- LIME ----------
         st.subheader("LIME (SVM)")
         lime_explainer = LimeTextExplainer(class_names=["Ctrl", "SCZ"])
+
+        def svm_proba_lime(text_list):
+            p1 = svm_proba(text_list)
+            return np.column_stack((1 - p1, p1))  # shape (n_samples, 2)
+
         lime_exp = lime_explainer.explain_instance(
             latest_entry["text"],
-            svm_proba,
+            svm_proba_lime,
             num_features=15,
-            num_samples=1000
+            num_samples=1000,
+            labels=[1],
         )
         st.components.v1.html(lime_exp.as_html(), height=350, scrolling=True)
 

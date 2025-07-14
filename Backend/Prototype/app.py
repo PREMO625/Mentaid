@@ -1,11 +1,13 @@
 import streamlit as st
 import os
+from dotenv import load_dotenv
 from datetime import datetime
 import json
 import plotly.express as px
 import pandas as pd
 from liwc_analyzer import LIWCAnalyzer
 from semantic_coherence import SemanticCoherenceAnalyzer
+from soap_summary import SOAPSummaryGenerator
 
 from models.svm_model import SVMModel
 from models.nlp_model import NLPModel
@@ -19,6 +21,8 @@ import matplotlib.pyplot as plt
 import cloudinary.uploader
 import cloudinary.api
 
+load_dotenv()
+
 # Page configuration
 st.set_page_config(
     page_title="Mentaid Prototype",
@@ -26,8 +30,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# Initialize LIWC analyzer
+# Initialize analyzers
 liwc_analyzer = LIWCAnalyzer()
+soap_generator = SOAPSummaryGenerator(os.getenv('OPENROUTER_API_KEY'))
 
 def analyze_text(text):
     """
@@ -78,6 +83,9 @@ def user_interface():
                 "timestamp": datetime.now().isoformat(),
                 "user_id": "user_1"
             }
+            # Generate SOAP summary
+            entry = soap_generator.process_journal_entry(entry)
+            
             # Save to local storage
             entries = load_from_local_storage("journal_entries") or []
             # Ensure it's a list (handles old dict storage bug)
@@ -85,7 +93,7 @@ def user_interface():
                 entries = [entries]
             entries.append(entry)
             save_to_local_storage("journal_entries", entries)
-            st.success("Journal entry saved successfully!")
+            st.success("Journal entry saved successfully with SOAP summary!")
         else:
             st.warning("Please write something in the journal entry!")
 
@@ -174,11 +182,27 @@ def clinician_dashboard():
         # ---- Analysis Toggles ----
         analysis_type = st.selectbox(
             "Select analysis to view:",
-            ["Model Predictions", "LIWC Analysis", "Lexical Complexity", "Pronoun & Tense Usage", "Explainability", "Semantic Coherence", "Final Assessment"]
+            ["SOAP Summary", "Model Predictions", "LIWC Analysis", "Lexical Complexity", "Pronoun & Tense Usage", "Explainability", "Semantic Coherence", "Final Assessment"]
         )
         
+        # ---- SOAP Summary ----
+        if analysis_type == "SOAP Summary":
+            st.subheader("AI-Generated SOAP Summary")
+            if "soap_summary" in latest_entry and latest_entry["soap_summary"]:
+                summary = latest_entry["soap_summary"]
+                st.markdown("<h5>Subjective</h5>", unsafe_allow_html=True)
+                st.write(summary.get("subjective", "Not available."))
+                st.markdown("<h5>Objective</h5>", unsafe_allow_html=True)
+                st.write(summary.get("objective", "Not available."))
+                st.markdown("<h5>Assessment</h5>", unsafe_allow_html=True)
+                st.write(summary.get("assessment", "Not available."))
+                st.markdown("<h5>Plan</h5>", unsafe_allow_html=True)
+                st.write(summary.get("plan", "Not available."))
+            else:
+                st.warning("SOAP summary could not be generated for this entry.")
+
         # ---- Model Predictions ----
-        if analysis_type == "Model Predictions":
+        elif analysis_type == "Model Predictions":
             st.subheader("Model Predictions")
             st.markdown(f"**SVM probability:** {np.mean(svm_predictions):.2f} → **Label:** {'SCZ (1)' if svm_label else 'Ctrl (0)'}")
             st.markdown(f"**NLP probability:** {np.mean(nlp_predictions):.2f} → **Label:** {'SCZ (1)' if nlp_label else 'Ctrl (0)'}")

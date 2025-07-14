@@ -3,6 +3,8 @@ fastapi
 uvicorn
 python-multipart
 streamlit==1.46.1
+openrouter
+openai
 
 # Database
 motor  # async MongoDB client for MongoDB

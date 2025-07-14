@@ -100,10 +100,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import cloudinary.uploader
 import cloudinary.api
+from lexical_complexity_analyzer import LexicalComplexityAnalyzer
+from pos_usage_analyzer import POSUsageAnalyzer
 
 # Initialize models
 svm_model = SVMModel()
 nlp_model = NLPModel()
+
+# Initialize linguistic analyzers
+lexical_analyzer = LexicalComplexityAnalyzer()
+pos_analyzer = POSUsageAnalyzer()
 
 # Initialize explainers
 # Explainability tools will be initialized lazily in the dashboard to save memory
@@ -193,6 +199,22 @@ def clinician_dashboard():
                 other_df = pd.DataFrame(list(other_scores.items()), columns=['Category', 'Score'])
                 st.plotly_chart(px.line_polar(other_df, r='Score', theta='Category', line_close=True, title='Psychological Profile'))
             
+        # ---- Lexical Complexity ----
+        with st.expander("Lexical Complexity", expanded=False):
+            lex_stats = lexical_analyzer.get_stats(latest_entry["text"])
+            if lex_stats:
+                lc1, lc2, lc3 = st.columns(3)
+                lc1.metric("TTR", f"{lex_stats['type_token_ratio']:.2f}")
+                lc2.metric("Lexical Density", f"{lex_stats['lexical_density']:.2f}")
+                lc3.metric("Avg Sent Len", f"{lex_stats['avg_sentence_length']:.2f}")
+        # ---- Pronoun & Tense Usage ----
+        with st.expander("Pronoun & Tense Usage", expanded=False):
+            pos_stats = pos_analyzer.get_stats(latest_entry["text"])
+            if pos_stats:
+                pr_df = pd.DataFrame(list(pos_stats['pronouns'].items()), columns=['Pronoun', 'Proportion'])
+                te_df = pd.DataFrame(list(pos_stats['tenses'].items()), columns=['Tense', 'Proportion'])
+                st.plotly_chart(px.bar(pr_df, x='Pronoun', y='Proportion', title='Pronoun Distribution'))
+                st.plotly_chart(px.bar(te_df, x='Tense', y='Proportion', title='Tense Distribution'))
         # ---- Explainability for SVM ----
         st.subheader("Explainability for SVM")
 
@@ -263,65 +285,10 @@ def create_prediction_chart(predictions):
     )
     return fig
 
-    return None
-        
-    # Get detailed analysis
-    return liwc_analyzer.get_category_stats(text)
-
 def main():
-    # Sidebar navigation
+    """Main Streamlit entry: simple navigation between pages."""
     st.sidebar.title("Navigation")
-    
-    # Main content
-    st.title("Text Analysis Dashboard")
-    
-    # Text input
-    text_input = st.text_area("Enter text to analyze:", height=200)
-    
-    if st.button("Analyze Text"):
-        if text_input:
-            analysis = analyze_text(text_input)
-            if analysis:
-                st.subheader("Analysis Results")
-                
-                # Display basic statistics
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("Total Words", analysis['total_words'])
-                    st.metric("Average Word Length", f"{analysis['avg_word_length']:.2f}")
-                with col2:
-                    st.metric("Total Sentences", analysis['total_sentences'])
-                    st.metric("Most Prominent Emotion", analysis['most_prominent_emotion'])
-                
-                # Display emotion scores
-                st.subheader("Emotion Analysis")
-                emotion_categories = [cat for cat in analysis['category_scores'] if "emotion" in cat]
-                emotion_scores = {cat: analysis['category_scores'][cat] for cat in emotion_categories}
-                
-                # Create bar chart for emotions
-                emotions_df = pd.DataFrame(list(emotion_scores.items()), columns=['Emotion', 'Score'])
-                fig = px.bar(emotions_df, x='Emotion', y='Score', title='Emotion Distribution')
-                st.plotly_chart(fig)
-                
-                # Display other category scores
-                st.subheader("Psychological Categories")
-                other_categories = [cat for cat in analysis['category_scores'] if cat not in emotion_categories]
-                other_scores = {cat: analysis['category_scores'][cat] for cat in other_categories}
-                
-                # Create radar chart for other categories
-                other_df = pd.DataFrame(list(other_scores.items()), columns=['Category', 'Score'])
-                fig = px.line_polar(other_df, r='Score', theta='Category', line_close=True, title='Psychological Profile')
-                st.plotly_chart(fig)
-                
-                # Display top categories
-                st.subheader("Top Categories")
-                sorted_categories = sorted(analysis['category_scores'].items(), key=lambda x: x[1], reverse=True)[:5]
-                for cat, score in sorted_categories:
-                    st.write(f"- {cat}: {score:.2f}%")
-        else:
-            st.warning("Please enter some text to analyze")
-    page = st.sidebar.radio("Go to", ["User Interface", "Clinician Dashboard"])
-    
+    page = st.sidebar.radio("Go to", ["User Interface", "Clinician Dashboard"], index=0)
     if page == "User Interface":
         user_interface()
     else:

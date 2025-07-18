@@ -25,7 +25,7 @@ load_dotenv()
 
 # Page configuration
 st.set_page_config(
-    page_title="Mentaid Prototype",
+    page_title="Mirror-Mind Prototype",
     page_icon="🧠",
     layout="wide"
 )
@@ -62,7 +62,7 @@ def load_from_local_storage(key):
         return {}
 
 def user_interface():
-    st.title("Mentaid - User Dashboard")
+    st.title("MirrorMind - User Dashboard")
     
     # Mood rating
     st.subheader("How are you feeling today?")
@@ -124,7 +124,7 @@ pos_analyzer = POSUsageAnalyzer()
 # Explainability tools will be initialized lazily in the dashboard to save memory
 
 def clinician_dashboard():
-    st.title("Mentaid - Clinician Dashboard")
+    st.title("MirrorMind - Clinician Dashboard")
     
     # Initialize analyzers
     semantic_analyzer = SemanticCoherenceAnalyzer()

@@ -63,16 +63,16 @@ class NLPModel:
         Returns:
             float: Prediction score (0 to 1)
         """
-        # Tokenize and prepare input
-        inputs = self.tokenizer(text, 
-                              return_tensors="pt", 
-                              truncation=True, 
+        # Tokenize input
+        inputs = self.tokenizer(text,
+                              return_tensors='pt',
                               max_length=512,
                               padding=True)
         
         with torch.no_grad():
-            # Move inputs to CPU if needed
-            inputs = {k: v.to('cpu') if isinstance(v, torch.Tensor) else v for k, v in inputs.items()}
+            # Move inputs to the same device as the model
+            device = next(self.model.parameters()).device
+            inputs = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in inputs.items()}
             outputs = self.model(**inputs)
             
         # Get probability of positive class
